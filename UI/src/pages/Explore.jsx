@@ -19,7 +19,6 @@ const Explore = () => {
     let result = [...campaigns];
     if (category !== "All") result = result.filter(c => c.Category === category);
     if (sort === "Most Funded") result.sort((a, b) => (b.Raised || 0) - (a.Raised || 0));
-    else if (sort === "% Complete") result.sort((a, b) => (b.Goal > 0 ? b.Raised / b.Goal : 0) - (a.Goal > 0 ? a.Raised / a.Goal : 0));
     else result.sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt));
     setFiltered(result);
   }, [category, sort, campaigns]);
@@ -30,11 +29,16 @@ const Explore = () => {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Explore Causes</h1>
-            <p className="text-sm text-gray-500 mt-1">{filtered.length} campaign{filtered.length !== 1 ? "s" : ""}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {filtered.length} campaign{filtered.length !== 1 ? "s" : ""}
+            </p>
           </div>
+
           <div className="flex gap-3">
-            <select className="px-3 py-2 border rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              value={category} onChange={e => setCategory(e.target.value)}>
+            <select
+              className="px-3 py-2 border rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              value={category} onChange={e => setCategory(e.target.value)}
+            >
               <option value="All">All Categories</option>
               <option value="Medical">Medical</option>
               <option value="Education">Education</option>
@@ -42,11 +46,13 @@ const Explore = () => {
               <option value="Disaster Relief">Disaster Relief</option>
               <option value="Community">Community</option>
             </select>
-            <select className="px-3 py-2 border rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              value={sort} onChange={e => setSort(e.target.value)}>
+
+            <select
+              className="px-3 py-2 border rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              value={sort} onChange={e => setSort(e.target.value)}
+            >
               <option value="Latest">Latest</option>
               <option value="Most Funded">Most Funded</option>
-              <option value="% Complete">% Complete</option>
             </select>
           </div>
         </div>
@@ -67,8 +73,13 @@ const Explore = () => {
                     ) : (
                       <div className="h-full flex items-center justify-center text-gray-400 text-sm">No Image</div>
                     )}
-                    {pct > 0 && <span className="absolute top-2 right-2 bg-black text-white text-xs px-2 py-1 rounded-full">{pct}% funded</span>}
+                    {pct > 0 && (
+                      <span className="absolute top-2 right-2 bg-black text-white text-xs px-2 py-1 rounded-full">
+                        {pct}% funded
+                      </span>
+                    )}
                   </div>
+
                   <div className="p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">{c.Category || "General"}</span>
@@ -76,9 +87,10 @@ const Explore = () => {
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 mt-2">{c.Title}</h3>
                     <p className="text-sm text-gray-600 mt-1 line-clamp-2">{c.Description}</p>
+
                     <div className="mt-4">
                       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-2 bg-black rounded-full transition-all" style={{ width: `${pct}%` }}></div>
+                        <div className="h-2 bg-black rounded-full transition-all" style={{ width: `${pct}%` }} />
                       </div>
                       <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
                         <div>
@@ -97,6 +109,7 @@ const Explore = () => {
           </div>
         )}
       </main>
+
       <footer className="text-center py-6 text-sm text-gray-500 border-t">&copy; 2025 GiveHelp</footer>
     </div>
   );
