@@ -1,6 +1,4 @@
-// AuthContext.jsx — from theme.docx context/AuthContext.jsx pattern
-// Concepts: createContext, useContext, useCallback, useMemo, useEffect, useState
-
+// AuthContext.jsx
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 const AuthContext = createContext(null);
@@ -9,7 +7,6 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // useCallback — memoizes fetchProfile so it doesn't re-create on every render
   const fetchProfile = useCallback(async () => {
     setLoading(true);
     try {
@@ -24,10 +21,14 @@ export function AuthProvider({ children }) {
       if (!res.ok) { setProfile(null); return; }
 
       const data = await res.json();
+
       setProfile({
-        username: data.UserName,
-        email: data.Email,
-        userRole: data.UserRole,
+        username:     data.UserName,
+        email:        data.Email,
+        userRole:     data.UserRole,
+        // Store raw base64 string — Profile.jsx renders as data:image/jpeg;base64,...
+        // No separate /avatar route needed at all
+        avatarBase64: data.ProfilePicture || null,
       });
     } catch {
       setProfile(null);
@@ -36,17 +37,14 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Run fetchProfile once on mount
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
-  // Prevent stale page from showing after browser back after logout (theme pattern)
   useEffect(() => {
     const onPageShow = (e) => { if (e.persisted) fetchProfile(); };
     window.addEventListener("pageshow", onPageShow);
     return () => window.removeEventListener("pageshow", onPageShow);
   }, [fetchProfile]);
 
-  // useCallback — login function memoized
   const login = useCallback(async (email, password) => {
     const res = await fetch("/api/user/login", {
       method: "POST",
@@ -54,10 +52,12 @@ export function AuthProvider({ children }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ Email: email, Password: password }),
     });
+
     if (!res.ok) {
       const data = await res.json();
       throw new Error(data.msg || "Invalid Credentials!");
     }
+
     const data = await res.json();
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", data.role);
@@ -65,7 +65,6 @@ export function AuthProvider({ children }) {
     await fetchProfile();
   }, [fetchProfile]);
 
-  // useCallback — logout function memoized
   const logout = useCallback(async () => {
     await fetch("/api/user/logout", { method: "POST", credentials: "include" });
     localStorage.removeItem("token");
@@ -74,7 +73,6 @@ export function AuthProvider({ children }) {
     setProfile(null);
   }, []);
 
-  // useMemo — context value only re-computes when dependencies change
   const value = useMemo(() => ({
     profile,
     loading,
@@ -91,7 +89,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-// Custom hook — useAuth (from theme.docx pattern)
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");

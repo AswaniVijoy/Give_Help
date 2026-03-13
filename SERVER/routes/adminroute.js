@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { Campaign } from "../models/campaignmodel.js";
 import { Donation } from "../models/donationmodel.js";
+import { User } from "../models/usermodel.js";
 import upload from "../middleware/upload.js";
 import sharp from "sharp";
 import { authenticate, isAdmin } from "../middleware/auth.js";
@@ -17,7 +18,7 @@ admin.get("/campaigns", authenticate, isAdmin, async (req, res) => {
   }
 });
 
-// POST /admin/campaign — create with image upload
+// POST /admin/campaign --- create with image upload
 admin.post("/campaign", authenticate, isAdmin, upload.single("Image"), async (req, res) => {
   try {
     const { Title, Category, Target, Status, Description, CreatedBy } = req.body;
@@ -34,9 +35,8 @@ admin.post("/campaign", authenticate, isAdmin, upload.single("Image"), async (re
     }
 
     await Campaign.create({
-      Title,
-      Category,
-      Goal: Number(Target),   // ✅ form sends "Target", schema uses "Goal"
+      Title, Category,
+      Goal: Number(Target),
       Status: Status || "Active",
       Description: Description || "",
       Image: imageBase64,
@@ -50,7 +50,7 @@ admin.post("/campaign", authenticate, isAdmin, upload.single("Image"), async (re
   }
 });
 
-// PUT /admin/campaign/:id — update
+// PUT /admin/campaign/:id --- update
 admin.put("/campaign/:id", authenticate, isAdmin, upload.single("Image"), async (req, res) => {
   try {
     const { Title, Category, Target, Status, Description } = req.body;
@@ -78,11 +78,26 @@ admin.delete("/campaign/:id", authenticate, isAdmin, async (req, res) => {
   }
 });
 
-// GET /admin/donations
+// GET /admin/donations --- enriched with donor profile picture
 admin.get("/donations", authenticate, isAdmin, async (req, res) => {
   try {
-    const data = await Donation.find();
-    res.json(data);
+    const donations = await Donation.find();
+
+    // Fetch all unique donor usernames in one query
+    const donorNames = [...new Set(donations.map((d) => d.Donar).filter(Boolean))];
+    const users = await User.find({ UserName: { $in: donorNames } }).select("UserName ProfilePicture");
+
+    // Build a lookup map: username → base64 avatar
+    const avatarMap = {};
+    users.forEach((u) => { avatarMap[u.UserName] = u.ProfilePicture || null; });
+
+    // Attach avatarBase64 to each donation record
+    const enriched = donations.map((d) => ({
+      ...d.toObject(),
+      avatarBase64: avatarMap[d.Donar] || null,
+    }));
+
+    res.json(enriched);
   } catch (err) {
     res.status(500).json({ msg: "Server error" });
   }
